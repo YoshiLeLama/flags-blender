@@ -54,7 +54,7 @@ func main() {
 	}})
 
 	// On initialise la variable qui permet de stocker la couleur de chaque pixel
-	var color color.RGBA
+	var color = color.RGBA{A: 255}
 
 	for x := 0; x < newFlag.Bounds().Dx(); x++ {
 		for y := 0; y < newFlag.Bounds().Dy(); y++ {
