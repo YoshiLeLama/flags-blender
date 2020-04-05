@@ -5,13 +5,11 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
-	"math"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/nfnt/resize"
+	"flagsblender.fr/yoshi/flags/utils"
 )
 
 func main() {
@@ -32,7 +30,7 @@ func main() {
 	// On récupère les images correspondant aux drapeaux
 	flagReader, err := os.Open("flags/" + strings.ToLower(firstFlagName) + ".png")
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 
 	// On prévoit la fermeture du reader
@@ -40,29 +38,22 @@ func main() {
 
 	firstFlag, err := png.Decode(flagReader)
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 
 	flagReader, err = os.Open("flags/" + strings.ToLower(secondFlagName) + ".png")
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 
 	secondFlag, err := png.Decode(flagReader)
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 
 	beginTime := time.Now()
 
-	// On récupère le rectangle correspondant à chaque drapeau
-	firstFlagBounds, secondFlagBounds := firstFlag.Bounds(), secondFlag.Bounds()
-
-	minWidth := int(math.Min(float64(firstFlagBounds.Dx()), float64(secondFlagBounds.Dx())))
-	minHeight := int(math.Min(float64(firstFlagBounds.Dy()), float64(secondFlagBounds.Dy())))
-
-	firstFlag = resize.Resize(uint(minWidth), uint(minHeight), firstFlag, resize.NearestNeighbor)
-	secondFlag = resize.Resize(uint(minWidth), uint(minHeight), secondFlag, resize.NearestNeighbor)
+	minWidth, minHeight := utils.AdaptFlags(&firstFlag, &secondFlag)
 
 	// On crée une nouvelle image RGBA pour stocker le nouveau drapeau
 	newFlag := image.NewRGBA(image.Rectangle{Max: image.Point{
@@ -91,14 +82,14 @@ func main() {
 	// On crée le fichier destiné à stocker le nouveau drapeau (ici, il sera créé à la racine de l'application)
 	newFlagFile, err := os.Create("NewFlag.png")
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 	// On prévoit la fermeture du fichier
 	defer newFlagFile.Close()
 
 	err = png.Encode(newFlagFile, newFlag)
 	if err != nil {
-		log.Fatal(err)
+		utils.LogFatal(err)
 	}
 
 	// On confirme à l'utilisateur la réussite de l'opération
