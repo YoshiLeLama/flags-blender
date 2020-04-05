@@ -9,16 +9,25 @@ import (
 	"math"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/nfnt/resize"
 )
 
 func main() {
 	// On récupère les noms des pays dont l'utilisateur veut mélanger les drapeaux
 	var firstFlagName string
-	fmt.Println("Veuillez rentrer le nom du premier pays :")
-	fmt.Scanln(&firstFlagName)
 	var secondFlagName string
-	fmt.Println("Veuillez rentrer le nom du second pays :")
-	fmt.Scanln(&secondFlagName)
+
+	for firstFlagName == "" {
+		fmt.Println("Veuillez rentrer le nom du premier pays :")
+		fmt.Scanln(&firstFlagName)
+	}
+
+	for secondFlagName == "" {
+		fmt.Println("Veuillez rentrer le nom du second pays :")
+		fmt.Scanln(&secondFlagName)
+	}
 
 	// On récupère les images correspondant aux drapeaux
 	flagReader, err := os.Open("flags/" + strings.ToLower(firstFlagName) + ".png")
@@ -44,20 +53,27 @@ func main() {
 		log.Fatal(err)
 	}
 
+	beginTime := time.Now()
+
 	// On récupère le rectangle correspondant à chaque drapeau
 	firstFlagBounds, secondFlagBounds := firstFlag.Bounds(), secondFlag.Bounds()
 
+	minWidth := int(math.Min(float64(firstFlagBounds.Dx()), float64(secondFlagBounds.Dx())))
+	minHeight := int(math.Min(float64(firstFlagBounds.Dy()), float64(secondFlagBounds.Dy())))
+
+	firstFlag = resize.Resize(uint(minWidth), uint(minHeight), firstFlag, resize.NearestNeighbor)
+	secondFlag = resize.Resize(uint(minWidth), uint(minHeight), secondFlag, resize.NearestNeighbor)
+
 	// On crée une nouvelle image RGBA pour stocker le nouveau drapeau
 	newFlag := image.NewRGBA(image.Rectangle{Max: image.Point{
-		int(math.Min(float64(firstFlagBounds.Dx()), float64(secondFlagBounds.Dx()))),
-		int(math.Min(float64(firstFlagBounds.Dy()), float64(secondFlagBounds.Dy()))),
+		minWidth, minHeight,
 	}})
 
 	// On initialise la variable qui permet de stocker la couleur de chaque pixel
 	var color = color.RGBA{A: 255}
 
-	for x := 0; x < newFlag.Bounds().Dx(); x++ {
-		for y := 0; y < newFlag.Bounds().Dy(); y++ {
+	for x := 0; x < minWidth; x++ {
+		for y := 0; y < minWidth; y++ {
 			// On récupère la couleur du pixel de coordonnées (x, y) de chaque drapeau
 			firstR, firstG, firstB, _ := firstFlag.At(x, y).RGBA()
 			secondR, secondG, secondB, _ := secondFlag.At(x, y).RGBA()
@@ -87,4 +103,5 @@ func main() {
 
 	// On confirme à l'utilisateur la réussite de l'opération
 	fmt.Println("Successfully create a mix of the flags of " + firstFlagName + " and " + secondFlagName)
+	fmt.Printf("It takes %d ms", time.Now().Unix()-beginTime.Unix())
 }
